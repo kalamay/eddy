@@ -3,10 +3,6 @@
 
 #include <pwd.h>
 
-#if __linux__
-# define WITH_RAM 1
-#endif
-
 static const EdUsage new_usage = {
 	"Creates a new cache index and slab.",
 	(const char *[]) {
