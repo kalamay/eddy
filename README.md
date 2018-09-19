@@ -1,17 +1,38 @@
 *NOTE*
 
 The file format is highly volatile right now. Be sure to re-create the index/slab
-files when update versions.
+files when updating versions.
 
 # Eddy
 
 High-performance, maintenence-light, caching library and tools.
 
-Rather than rely on precise LRU caching, eddy implements an indexing scheme on
-top of a fixed size ring buffer. This can be either a pre-allocated file on disk
-or an entire device; both character and block devices are supported. The ring
-has the benefit of guaranteed sequential writes, no fragmentation of cached
-object blocks, and no ongoing disk space utilization management.
+The cache is comprised of two components: a fixed-size circular buffer and an
+index that tracks entries into the buffer.
+
+### Index
+
+The index is a copy-on-write b+tree. This protects modifications to the cache
+against corruption from crashes or improper API usage. All changes are made
+through a transaction, which properly tracks garbage pages for safe reuse.
+
+### Circular Buffer
+
+Rather than rely on precise LRU caching, eddy uses a modified FIFO algorithm.
+Active entries (those opened in an active transaction) are not evicted, and
+will be kept in the cache until the next pass of the circular buffer.
+
+This design has several advantages. The cache remains unfragmented and there is
+no ongoing disk space utilization management. Additionally, this allows eddy to
+be used as an index replay log.
+
+The buffer stores up to two blobs for each entry: meta data and object data.
+There is no formal reqiurements for either of the values, but they do have some
+distinct characteristics. Meta data is specified during object creation, where as
+object data is appended using the `ed_write` function. The sector size for meta
+data is, by default, different than the sector size of object data. Meta data is
+aligned to the system max alignment (typically 16 bytes). The object size is
+configurable down to the max alignment, but it defaults to the system page size.
 
 ## Building
 
@@ -45,15 +66,76 @@ eddy new --help
 
 ### Quick Start
 
-```
+```bash
 eddy new -v ./stuff
 echo "this is a test" | eddy set ./stuff test -t 200
 eddy get ./stuff test
 eddy get ./stuff test -i
 eddy update ./stuff test -t -1
+eddy ls ./stuff
 ```
 
-### Options
+### Example
+
+```C
+#include <string.h>
+#include <err.h>
+#include <eddy.h>
+
+int
+main(void)
+{
+	EdConfig cfg = ed_config_make();
+	cfg.index_path = "./stuff";
+
+	EdCache *cache = NULL;
+	int rc = ed_cache_open(&cache, &cfg);
+	if (rc < 0) {
+		errx(1, "failed to open index '%s': %s", cfg.index_path, ed_strerror(rc));
+	}
+
+	const char value[] = "some value";
+
+	EdObjectAttr attr = ed_object_attr_make();
+	attr.key = "thing";
+	attr.keylen = strlen(attr.key);
+	attr.datalen = sizeof(value);
+
+	EdObject *obj;
+	rc = ed_create(cache, &obj, &attr);
+	if (rc < 0) {
+		ed_cache_close(&cache);
+		errx(1, "faild to create object: %s", ed_strerror(rc));
+	}
+
+	rc = ed_write(obj, value, sizeof(value));
+	if (rc < 0) {
+		warnx("faild to write object: %s", ed_strerror(rc));
+	}
+
+	ed_close(&obj);
+	ed_cache_close(&cache);
+}
+```
+
+### Thread Safety
+
+Generally, eddy is geared towards parallel, multi-process access. Currently,
+thread safety is very limited. It does not, and likely never will, support
+opening multiple handles to the same cache within the same process. The plan
+is to implement thread safety when using the _same_ cache handle in a single
+process, however this work hasn't been completed yet. All access within a
+handle is re-entrant however, so you may implement your own locking outside
+of eddy. This also makes it safe to use separate handle to different caches
+across threads.
+
+### TODO
+- [ ] document, document, document
+- [ ] expose entry tagging for locking out regions
+- [ ] implement thread safe handles or a thread safe wrapper API
+- [ ] expose the internal transaction system for multiple updates
+
+### Build Options
 
 | Option | Description | Default |
 | --- | --- | --- |
@@ -95,14 +177,3 @@ There is a build stage for static analysis using `scan-build`:
 ```bash
 make BUILD=debug analyze
 ```
-
-# Thread Safety
-
-Generally, eddy is geared towards parallel, multi-process access. Currently,
-thread safety is implemented with the expectation that all threads within
-a process will share the same `EdCache` object. That is, it is safe to access
-and modify the cache from multiple threads _with the same handle_, but it is
-currently not guaranteed to be safe to open multiple cache handles to the same
-cache within a single process.
-
-This may change in the future if the use case becomes necessary.
