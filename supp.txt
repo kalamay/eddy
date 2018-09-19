@@ -1,2 +1,4 @@
 leak:ed_pg_track
 leak:ed_pg_untrack
+leak:test_write_sequence
+leak:test_read_snapshot

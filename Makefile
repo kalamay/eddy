@@ -21,10 +21,11 @@ ifeq ($(BUILD),release)
   OPT?= 3
   LTO?= amalg
 else
-  DEBUG_MMAP?= yes
   DEBUG_FAULT?= yes
   LTO?= no
-  ifneq ($(UNAME),Darwin)
+  ifeq ($(UNAME),Darwin)
+    DEBUG_MMAP?= yes
+  else
     SANITIZE?= address
   endif
 endif
@@ -111,7 +112,7 @@ ifeq ($(DEBUG),yes)
   LDFLAGS+= -g
 endif
 CFLAGS+= -fPIC -Ilib -I$(TMP) -march=native -fvisibility=hidden -pthread
-CFLAGS+= -D_GNU_SOURCE -D_BSD_SOURCE
+CFLAGS+= -D_GNU_SOURCE
 CFLAGS+= -DPAGESIZE=$(PAGESIZE) -DBUILD=$(BUILD)
 CFLAGS+= -DVERSION_MAJOR=$(VMAJ) -DVERSION_MINOR=$(VMIN) -DVERSION_BUILD=$(VBLD)
 ifeq ($(LTO),yes)
@@ -204,7 +205,7 @@ test: $(TESTSRC:test/test-%.c=test-%)
 
 # Build and run a single test.
 test-%: $(TEST)/test-% | ./test/tmp
-	@ASAN_OPTIONS=detect_leaks=1 ASAN_OPTIONS=suppressions=supp.txt ./$<
+	@ASAN_OPTIONS=detect_leaks=1 LSAN_OPTIONS=suppressions=supp.txt ./$<
 
 ./test/tmp:
 	./test/setup.sh $@
