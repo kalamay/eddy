@@ -18,6 +18,7 @@
 
 #if defined(__linux__)
 # include <linux/fs.h>
+# include <sys/sysmacros.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__)
 # include <sys/disk.h>
 #else
