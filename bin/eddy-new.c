@@ -6,7 +6,7 @@
 static const EdUsage new_usage = {
 	"Creates a new cache index and slab.",
 	(const char *[]) {
-		"[-v] [-f] [-c] [-s size] [-b size] [-S slab] index",
+		"[-v] [-f] [-C] [-s size] [-b size] [-S slab] index",
 		NULL
 	},
 	"size:\n"
@@ -26,7 +26,7 @@ static EdOption new_opts[] = {
 	{"seed",       "num",  0, 'D', "use an explicit (0 will create a random seed)"},
 	{"verbose",    NULL,   0, 'v', "enable verbose messaging"},
 	{"force",      NULL,   0, 'f', "force creation of a new cache file"},
-	{"checksum",   NULL,   0, 'c', "track crc32 checksums"},
+	{"no-checksum",NULL,   0, 'C', "disable tracking crc32 checksums"},
 	{"keep-old",   NULL,   0, 'k', "don't mark replaced objects as expired"},
 	{"page-align", NULL,   0, 'p', "force file data to be page aligned"},
 #if WITH_RAM
@@ -94,7 +94,10 @@ new_run(const EdCommand *cmd, int argc, char *const *argv)
 	char *end;
 	long long val;
 	unsigned long long uval;
-	EdConfig cfg = { .flags = ED_FCREATE|ED_FALLOCATE, .slab_block_size = 4096 };
+	EdConfig cfg = {
+		.flags = ED_FCHECKSUM|ED_FCREATE|ED_FALLOCATE,
+		.slab_block_size = 4096
+	};
 #if WITH_RAM
 	bool ram = false;
 #endif
@@ -104,7 +107,7 @@ new_run(const EdCommand *cmd, int argc, char *const *argv)
 		switch (ch) {
 		case 'v': cfg.flags |= ED_FVERBOSE; break;
 		case 'f': cfg.flags |= ED_FREPLACE; break;
-		case 'c': cfg.flags |= ED_FCHECKSUM; break;
+		case 'C': cfg.flags &= ~ED_FCHECKSUM; break;
 		case 'k': cfg.flags |= ED_FKEEPOLD; break;
 		case 'p': cfg.flags |= ED_FPAGEALIGN; break;
 #if WITH_RAM
