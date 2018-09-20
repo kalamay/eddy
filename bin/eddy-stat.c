@@ -16,7 +16,7 @@ static EdOption stat_opts[] = {
 static int
 stat_run(const EdCommand *cmd, int argc, char *const *argv)
 {
-	EdConfig cfg = ed_config_make();
+	EdConfig cfg = ed_config_make(NULL);
 	EdCache *cache = NULL;
 
 	int ch;

@@ -21,7 +21,7 @@ static EdOption get_opts[] = {
 static int
 get_run(const EdCommand *cmd, int argc, char *const *argv)
 {
-	EdConfig cfg = ed_config_make();
+	EdConfig cfg = ed_config_make(NULL);
 	EdCache *cache = NULL;
 	bool unlink = false, meta = false, info = false;
 	int oflags = 0;

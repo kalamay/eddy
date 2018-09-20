@@ -15,7 +15,7 @@ static EdOption ls_opts[] = {
 static int
 ls_run(const EdCommand *cmd, int argc, char *const *argv)
 {
-	EdConfig cfg = ed_config_make();
+	EdConfig cfg = ed_config_make(NULL);
 	EdCache *cache = NULL;
 	EdList *list = NULL;
 	const EdObject *obj = NULL;

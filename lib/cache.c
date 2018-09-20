@@ -154,12 +154,12 @@ obj_reserve(EdCache *cache, EdTxn *txn, uint64_t flags, EdBlkno *vnop, size_t le
 	size_t start = no * block_size;
 	bool searched = false;
 	bool locked = false;
-	EdEntryBlock *block;
+	EdEntryBlock *block = NULL;
 	int rc;
 
 	// Find then next unlocked region >= #vno. If the current #vno cannot be used,
 	// start from the beginning of the next entry.
-	do {
+	for (;;) {
 		// If the range sticks out past the end of the file, search at the beginning.
 		// I was creating a wrapped mmap here previously. For simplicity, that has
 		// been removed, but it could come back without any file format changes.
@@ -180,6 +180,7 @@ obj_reserve(EdCache *cache, EdTxn *txn, uint64_t flags, EdBlkno *vnop, size_t le
 		}
 
 		if (ed_flck(slabfd, ED_LCK_EX, start, len, flags|ED_FNOBLOCK) < 0) {
+			// The lock failed, so find the next block position and loop again
 			rc = ed_bpt_next(txn, ED_DB_BLOCKS, (void **)&block);
 			if (rc < 0) { goto done; }
 			vno += block->count;
@@ -190,7 +191,7 @@ obj_reserve(EdCache *cache, EdTxn *txn, uint64_t flags, EdBlkno *vnop, size_t le
 			locked = true;
 			break;
 		}
-	} while(1);
+	}
 
 	// Determine the first page number after the write region.
 	end = no + len/block_size;

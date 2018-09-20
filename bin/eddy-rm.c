@@ -15,7 +15,7 @@ static EdOption rm_opts[] = {
 static int
 rm_run(const EdCommand *cmd, int argc, char *const *argv)
 {
-	EdConfig cfg = ed_config_make();
+	EdConfig cfg = ed_config_make(NULL);
 	EdCache *cache = NULL;
 	int rc = 1;
 

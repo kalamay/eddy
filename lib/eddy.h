@@ -51,8 +51,14 @@ typedef struct EdObject EdObject;
 typedef struct EdObjectAttr EdObjectAttr;
 typedef struct EdList EdList;
 
+/** @brief  Configuration object used when opening/creating a cache.
+ *
+ * The `index_path` field is the only member required to be defined,
+ * and when opening an existing cache, it is the only member that should
+ * be defined.
+ */
 struct EdConfig {
-	const char * index_path;
+	const char * index_path;       /**< Required path to the index. */
 	const char * slab_path;
 	unsigned     max_conns;
 	uint64_t     seed;
@@ -69,7 +75,7 @@ struct EdObjectAttr {
 	uint32_t     datalen;
 };
 
-#define ed_config_make() ((EdConfig){ .flags = 0 })
+#define ed_config_make(index) ((EdConfig){ .index_path = (index), .flags = 0 })
 #define ed_object_attr_make() ((EdObjectAttr){ .keylen = 0 })
 
 

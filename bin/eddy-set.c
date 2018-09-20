@@ -18,7 +18,7 @@ static EdOption set_opts[] = {
 static int
 set_run(const EdCommand *cmd, int argc, char *const *argv)
 {
-	EdConfig cfg = ed_config_make();
+	EdConfig cfg = ed_config_make(NULL);
 	EdCache *cache = NULL;
 	EdInput meta = ed_input_make();
 	EdInput data = ed_input_make();

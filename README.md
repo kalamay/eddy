@@ -85,9 +85,7 @@ eddy ls ./stuff
 int
 main(void)
 {
-	EdConfig cfg = ed_config_make();
-	cfg.index_path = "./stuff";
-
+	EdConfig cfg = ed_config_make("./stuff");
 	EdCache *cache = NULL;
 	int rc = ed_cache_open(&cache, &cfg);
 	if (rc < 0) {

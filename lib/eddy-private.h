@@ -1249,18 +1249,24 @@ struct EdBpt {
 	EdTxnId      xid;              /**< Transaction ID that allocated this page */
 	EdPgno       next;             /**< Overflow leaf pointer */
 	uint16_t     nkeys;            /**< Number of keys in the node */
-	uint16_t     _pad;
+	uint16_t     flags;            /**< Currently unused */
 #define ED_BPT_DATA (PAGESIZE - sizeof(EdPg) - sizeof(EdTxnId) - sizeof(EdPgno) - 4)
 	uint8_t      data[ED_BPT_DATA];/**< Tree-specific data for nodes (8-byte aligned) */
 };
 
 /**
  * @brief  B+Tree value type for indexing the slab by position
+ *
+ * Technically, we could probe the slab itself when searching for block
+ * boundaries, but that would be inefficient. Currently, the slab is only
+ * mapped once a specific location has been located. Using the slab to
+ * avoid a separate b+tree would require mapping across several locations
+ * in the slab. We try not to touch the slab whenever possible.
  */
 struct EdEntryBlock {
 	EdBlkno      no;               /**< Physical block number for the entry */
 	EdPgno       count;            /**< Number of blocks used by the entry */
-	uint32_t     _pad;
+	uint32_t     flags;            /**< Currently unused */
 	EdTxnId      xid;              /**< Transaction ID that created the entry */
 };
 
@@ -1276,6 +1282,14 @@ struct EdEntryBlock {
 
 /**
  * @brief  B+Tree value type for indexing the slab by key
+ *
+ * The full hash result is stored in the key entry, but the key itself is
+ * stored in the slab. This does not generally result in an unecessary mapping
+ * of the slab, however. When an entry is opened, the desired goal is to map
+ * the entry, so this works reasonable well in most cases. There are two downsides,
+ * however: hash collision resolution requires extra mappings, membership-only
+ * tests are not optimal. This is one of the design decisions I may remove in a
+ * future version.
  */
 struct EdEntryKey {
 	uint64_t     hash;             /**< Hash of the key */
