@@ -121,8 +121,14 @@ ed_sendfile(EdObject *obj, int s, size_t len);
 ED_EXPORT const void *
 ed_value(EdObject *obj, size_t *len);
 
+ED_EXPORT uint32_t
+ed_value_crc(const EdObject *obj);
+
 ED_EXPORT const void *
 ed_meta(EdObject *obj, size_t *len);
+
+ED_EXPORT uint32_t
+ed_meta_crc(const EdObject *obj);
 
 ED_EXPORT int
 ed_close(EdObject **objp);

@@ -691,11 +691,23 @@ ed_value(EdObject *obj, size_t *len)
 	return obj->data;
 }
 
+uint32_t
+ed_value_crc(const EdObject *obj)
+{
+	return obj->datacrc;
+}
+
 const void *
 ed_meta(EdObject *obj, size_t *len)
 {
 	*len = obj->metalen;
 	return obj->meta;
+}
+
+uint32_t
+ed_meta_crc(const EdObject *obj)
+{
+	return obj->metacrc;
 }
 
 int
